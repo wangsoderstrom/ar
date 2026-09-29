@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111">
+  <link rel="icon" href="data:,">
+  <title>Ett dolt lager</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./libs/three/three.module.js",
+      "three/addons/": "./libs/three/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- AR-vy (kamera + 3D) -->
+  <div id="ar"></div>
+
+  <!-- Startskärm -->
+  <section id="start" class="screen">
+    <div class="card">
+      <h1 data-t="title"></h1>
+      <p data-t="intro"></p>
+      <button id="btn-start" class="primary" data-t="start"></button>
+      <button id="btn-nocam" class="ghost" data-t="noCamera"></button>
+      <p class="small" data-t="privacy"></p>
+      <p id="error" class="error" hidden></p>
+    </div>
+  </section>
+
+  <!-- Laddar -->
+  <section id="loading" class="screen" hidden>
+    <div class="spinner" aria-hidden="true"></div>
+    <p data-t="loading"></p>
+  </section>
+
+  <!-- Sökhjälp medan kameran letar efter verket -->
+  <div id="scan" hidden>
+    <div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p data-t="scan"></p>
+  </div>
+
+  <!-- Kontroller under AR -->
+  <div id="controls" hidden>
+    <button id="btn-sound" class="pill"></button>
+  </div>
+
+  <!-- Reservläge: bara videon, ingen kamera -->
+  <section id="fallback" class="screen" hidden>
+    <video id="fallback-video" controls playsinline preload="metadata"></video>
+    <button id="btn-close" class="ghost" data-t="close"></button>
+  </section>
+
+  <!-- Videokälla för AR (dold, används som textur) -->
+  <video id="ar-video" playsinline webkit-playsinline muted preload="auto" crossorigin="anonymous" hidden></video>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
