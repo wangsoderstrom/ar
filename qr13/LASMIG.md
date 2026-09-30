@@ -79,6 +79,24 @@ ffmpeg -i farg.mp4 -i mask.mp4 -filter_complex "[0:v][1:v]hstack" -c:v libx264 -
 
 **Testa direkt:** `innehall/exempel-alfa-packed.mp4` är en testfil (en pulserande cirkel). Sätt `video: "innehall/exempel-alfa-packed.mp4"` och `alphaMode: "packed"` för att se hur det ser ut.
 
+### Läge "chroma" – greenscreen direkt i sidan
+
+Ingen förberedelse behövs: filma/animera mot grön (eller blå) bakgrund, exportera en vanlig MP4, och sidan tar bort färgen i realtid.
+
+I `config.js`:
+```
+alphaMode: "chroma",
+chromaKey: {
+  color: "#00b140",   // bakgrundsfärgen – plocka den med pipett i ett bildprogram
+  similarity: 0.4,    // öka om det blir kvar grönt i bakgrunden, minska om motivet börjar försvinna
+  smoothness: 0.08,   // öka för mjukare kanter
+  spill: 0.1,         // öka om kanterna har ett grönt skimmer
+},
+```
+Tänk på: **allt i videon som har samma färg försvinner** – även gröna detaljer i motivet. Använd blå bakgrund om motivet innehåller grönt (och tvärtom). Jämn belysning på bakgrunden ger renast resultat. För hårstrån, rök, glas och mjuka skuggor blir "packed" alltid snyggare, eftersom alfan då görs i redigeringsprogrammet.
+
+**Testa direkt:** `innehall/exempel-greenscreen.mp4` – sätt `video: "innehall/exempel-greenscreen.mp4"`, `alphaMode: "chroma"` och `color: "#00b140"`.
+
 Tips: färgen bakom helt genomskinliga partier spelar ingen roll, men i halvgenomskinliga kanter (mjuka skuggor, glöd) ser det bäst ut om ni exporterar med *straight* (inte premultiplied) alfa.
 
 ## 3. Publicera (GitHub Pages)

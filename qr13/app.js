@@ -4,7 +4,7 @@ import { CONFIG } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 const T = CONFIG.text;
-const ALPHA = CONFIG.alphaMode || "none"; // "none" | "packed" | "separate"
+const ALPHA = CONFIG.alphaMode || "none"; // "none" | "packed" | "separate" | "chroma"
 
 // Fyll i texter från config
 document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = T[el.dataset.t] ?? ""; });
@@ -56,6 +56,10 @@ function makeMaterial() {
   // Råa sRGB-värden in, råa ut → färgerna blir exakt som i videofilen.
   const colorTex = new THREE.VideoTexture(video);
   const alphaTex = mask ? new THREE.VideoTexture(mask) : colorTex;
+  const ck = CONFIG.chromaKey || {};
+  const hex = String(ck.color || "#00ff00").replace("#", "");
+  const key = { r: parseInt(hex.slice(0, 2), 16) / 255, g: parseInt(hex.slice(2, 4), 16) / 255, b: parseInt(hex.slice(4, 6), 16) / 255 };
+  const MODE = { packed: 1, separate: 2, chroma: 3 }[ALPHA] || 2;
   const m = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -63,7 +67,11 @@ function makeMaterial() {
       uColor: { value: colorTex },
       uAlpha: { value: alphaTex },
       uOpacity: { value: 0 },
-      uPacked: { value: ALPHA === "packed" ? 1 : 0 },
+      uMode: { value: MODE },
+      uKey: { value: new THREE.Vector3(key.r, key.g, key.b) },
+      uSimilarity: { value: ck.similarity ?? 0.4 },
+      uSmoothness: { value: ck.smoothness ?? 0.08 },
+      uSpill: { value: ck.spill ?? 0.1 },
     },
     vertexShader: /* glsl */`
       varying vec2 vUv;
@@ -73,15 +81,33 @@ function makeMaterial() {
       uniform sampler2D uColor;
       uniform sampler2D uAlpha;
       uniform float uOpacity;
-      uniform int uPacked;
+      uniform int uMode;
+      uniform vec3 uKey;
+      uniform float uSimilarity, uSmoothness, uSpill;
       varying vec2 vUv;
+
+      // Färgton utan ljushet (samma metod som OBS chroma key)
+      vec2 toUV(vec3 c) {
+        return vec2(c.r * -0.169 + c.g * -0.331 + c.b * 0.5 + 0.5,
+                    c.r * 0.5   + c.g * -0.419 + c.b * -0.081 + 0.5);
+      }
+
       void main() {
         vec3 rgb; float a;
-        if (uPacked == 1) {
+        if (uMode == 1) {
           // Vänster halva = färg, höger halva = alfa (vitt = synligt)
           float x = clamp(vUv.x, 0.002, 0.998) * 0.5;
           rgb = texture2D(uColor, vec2(x, vUv.y)).rgb;
           a   = texture2D(uColor, vec2(x + 0.5, vUv.y)).r;
+        } else if (uMode == 3) {
+          // Greenscreen: allt som liknar nyckelfärgen blir genomskinligt
+          rgb = texture2D(uColor, vUv).rgb;
+          float d = distance(toUV(rgb), toUV(uKey)) - uSimilarity;
+          a = pow(clamp(d / max(uSmoothness, 0.0001), 0.0, 1.0), 1.5);
+          // Ta bort grönt skimmer i kanterna
+          float spill = pow(clamp(d / max(uSpill, 0.0001), 0.0, 1.0), 1.5);
+          float grey = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+          rgb = mix(vec3(grey), rgb, spill);
         } else {
           rgb = texture2D(uColor, vUv).rgb;
           a   = texture2D(uAlpha, vUv).r;
