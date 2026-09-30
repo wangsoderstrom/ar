@@ -30,10 +30,10 @@ button { font:inherit; cursor:pointer; border-radius:999px; -webkit-tap-highligh
 #scan p { background:rgba(0,0,0,.55); padding:.5em 1em; border-radius:999px; margin-top:24px; }
 .frame { position:relative; width:min(70vw, 60vh); aspect-ratio: 4/3; animation: pulse 2.2s ease-in-out infinite; }
 .frame i { position:absolute; width:34px; height:34px; border:3px solid rgba(255,255,255,.9); }
-.frame i:nth-child(1){ top:0; left:0; border-right:0; border-bottom:0; }
-.frame i:nth-child(2){ top:0; right:0; border-left:0; border-bottom:0; }
-.frame i:nth-child(3){ bottom:0; left:0; border-right:0; border-top:0; }
-.frame i:nth-child(4){ bottom:0; right:0; border-left:0; border-top:0; }
+.frame i:nth-of-type(1){ top:0; left:0; border-right:0; border-bottom:0; }
+.frame i:nth-of-type(2){ top:0; right:0; border-left:0; border-bottom:0; }
+.frame i:nth-of-type(3){ bottom:0; left:0; border-right:0; border-top:0; }
+.frame i:nth-of-type(4){ bottom:0; right:0; border-left:0; border-top:0; }
 @keyframes pulse { 50% { transform: scale(.94); opacity:.6; } }
 
 #controls { position:fixed; z-index:6; left:0; right:0; bottom: max(20px, env(safe-area-inset-bottom));
@@ -44,4 +44,9 @@ button { font:inherit; cursor:pointer; border-radius:999px; -webkit-tap-highligh
 #fallback-canvas { width:100%; height:70vh; display:block; }
 #btn-fb-sound { margin-top:.8em; }
 
-@media (prefers-reduced-motion: reduce) { .frame, .spinner { animation:none; } }
+.frame.has-guide { width:auto; aspect-ratio:auto; animation:none; }
+#guide { display:block; max-width:78vw; max-height:58vh; opacity:.35; border-radius:2px;
+  animation: breathe 2.6s ease-in-out infinite; }
+.frame.has-guide i { border-color: rgba(255,255,255,.95); }
+@keyframes breathe { 50% { opacity: calc(var(--guide-opacity, .35) * .6); } }
+@media (prefers-reduced-motion: reduce) { .frame, .spinner, #guide { animation:none; } }

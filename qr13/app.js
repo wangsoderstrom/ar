@@ -10,6 +10,19 @@ const ALPHA = CONFIG.alphaMode || "none"; // "none" | "packed" | "separate" | "c
 document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = T[el.dataset.t] ?? ""; });
 document.title = T.title;
 
+// Sikthjälp (blek bild av verket i sökramen)
+if (CONFIG.guideImage) {
+  const g = $("guide");
+  g.onload = () => {
+    g.hidden = false;
+    g.parentElement.classList.add("has-guide");
+    const o = String(CONFIG.guideOpacity ?? 0.35);
+    g.style.opacity = o;
+    document.documentElement.style.setProperty("--guide-opacity", o);
+  };
+  g.src = CONFIG.guideImage;
+}
+
 // ---------- Videokällor ----------
 const video = $("ar-video");
 video.src = CONFIG.video;

@@ -32,6 +32,11 @@ export const CONFIG = {
   // I läget "packed": ange proportionerna för EN halva (inte hela filen).
   videoAspect: 0.833,
 
+  // Sikthjälp: en blek version av verket visas medan kameran letar,
+  // så att man ser vad man ska sikta på. Tom sträng "" = bara hörnmarkeringar.
+  guideImage: "innehall/verk.jpg",
+  guideOpacity: 0.35,   // 0–1, hur synlig sikthjälpen är
+
   // Storlek och placering relativt verket. 1 = exakt verkets bredd.
   // offsetX/offsetY i verkets bredder (0.1 = 10 % av bredden). Y uppåt.
   scale: 1.0,
