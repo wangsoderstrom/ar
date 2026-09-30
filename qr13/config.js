@@ -17,7 +17,7 @@ export const CONFIG = {
   //   "separate" – två mp4-filer: färg i `video` och alfa i `alphaVideo`
   //   "chroma"   – greenscreen: allt i videon som har färgen i `chromaKey.color`
   //                blir genomskinligt (justera med inställningarna nedan)
-  alphaMode: "none",
+  alphaMode: "chroma",
   alphaVideo: "innehall/video-alpha.mp4",
 
   // Greenscreen-inställningar (används bara när alphaMode är "chroma")
@@ -25,7 +25,7 @@ export const CONFIG = {
     color: "#20789c",   // färgen som ska bort, t.ex. "#00b140" (studiogrön) eller "#0047bb" (blå)
     similarity: 0.12,    // hur lik färgen måste vara för att tas bort (högre = mer tas bort)
     smoothness: 0.06,   // mjukhet i kanten (högre = mjukare övergång)
-    spill: 008,         // tar bort grönt skimmer i kanterna (högre = mer)
+    spill: 0.08,         // tar bort grönt skimmer i kanterna (högre = mer)
   },
 
   // Videons proportioner: höjd / bredd. 16:9 = 0.5625, 4:3 = 0.75, 1:1 = 1
