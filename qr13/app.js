@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import { MindARThree } from "./libs/mindar/mindar-image-three.prod.js";
-import { CONFIG } from "./config.js";
+const { CONFIG } = await import("./config.js?v=" + (window.__v || Date.now()));
 
 const $ = (id) => document.getElementById(id);
+// Lägg till versionsnummer så att nya filer syns direkt (ingen gammal cache)
+const V = window.__v || Date.now();
+const bust = (u) => (u ? u + (u.includes("?") ? "&" : "?") + "v=" + V : u);
 const T = CONFIG.text;
 const ALPHA = CONFIG.alphaMode || "none"; // "none" | "packed" | "separate" | "chroma"
 
@@ -20,12 +23,12 @@ if (CONFIG.guideImage) {
     g.style.opacity = o;
     document.documentElement.style.setProperty("--guide-opacity", o);
   };
-  g.src = CONFIG.guideImage;
+  g.src = bust(CONFIG.guideImage);
 }
 
 // ---------- Videokällor ----------
 const video = $("ar-video");
-video.src = CONFIG.video;
+video.src = bust(CONFIG.video);
 video.loop = CONFIG.loop;
 video.muted = true;
 
@@ -33,7 +36,7 @@ video.muted = true;
 let mask = null;
 if (ALPHA === "separate") {
   mask = document.createElement("video");
-  Object.assign(mask, { src: CONFIG.alphaVideo, loop: CONFIG.loop, muted: true, playsInline: true, preload: "auto", crossOrigin: "anonymous" });
+  Object.assign(mask, { src: bust(CONFIG.alphaVideo), loop: CONFIG.loop, muted: true, playsInline: true, preload: "auto", crossOrigin: "anonymous" });
   mask.setAttribute("playsinline", "");
   mask.setAttribute("webkit-playsinline", "");
 }
@@ -164,7 +167,7 @@ async function startAR() {
 
   mindar = new MindARThree({
     container: $("ar"),
-    imageTargetSrc: CONFIG.target,
+    imageTargetSrc: bust(CONFIG.target),
     uiLoading: "no", uiScanning: "no", uiError: "no",
     filterMinCF: CONFIG.filterMinCF,
     filterBeta: CONFIG.filterBeta,
@@ -237,7 +240,7 @@ function startFallback() {
 
   if (ALPHA === "none") {
     const v = $("fallback-video");
-    v.src = CONFIG.video;
+    v.src = bust(CONFIG.video);
     v.poster = CONFIG.poster;
     v.loop = CONFIG.loop;
     v.hidden = false;
