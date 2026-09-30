@@ -9,7 +9,17 @@ export const CONFIG = {
   video: "innehall/video.mp4",
   poster: "innehall/poster.jpg",
 
+  // Genomskinlighet (alfa):
+  //   "none"     – vanlig video, ingen genomskinlighet
+  //   "packed"   – EN mp4 där vänster halva är färg och höger halva är alfa
+  //                (vitt = synligt, svart = genomskinligt). Rekommenderas –
+  //                halvorna kan aldrig hamna ur synk.
+  //   "separate" – två mp4-filer: färg i `video` och alfa i `alphaVideo`
+  alphaMode: "none",
+  alphaVideo: "innehall/video-alpha.mp4",
+
   // Videons proportioner: höjd / bredd. 16:9 = 0.5625, 4:3 = 0.75, 1:1 = 1
+  // I läget "packed": ange proportionerna för EN halva (inte hela filen).
   videoAspect: 0.75,
 
   // Storlek och placering relativt verket. 1 = exakt verkets bredd.
