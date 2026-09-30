@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
   <title>Skapa spårningsfil</title>
   <style>
     body { font: 16px/1.5 system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 16px; background:#f6f4ef; color:#222; }
@@ -12,15 +13,18 @@
     button:disabled { opacity: .4; cursor: default; }
     progress { width: 100%; height: 1.2em; margin: 1rem 0; }
     .note { color: #666; font-size: .9rem; }
+    .error { color: #b3261e; font-weight: 600; }
+    .ok { color: #1b6e2e; font-weight: 600; }
   </style>
 </head>
 <body>
   <h1>Skapa spårningsfil (.mind)</h1>
-  <p>Välj ett rakt, välbelyst foto av konstverket (helst beskuret till bara verket, 1000–2000 px brett).
-     Filen skapas lokalt i din webbläsare. Spara den som <code>innehall/verk.mind</code>.</p>
-  <p class="note">Öppna den här sidan via en lokal webbserver eller från den publicerade sajten (inte som fil direkt från disken).</p>
+  <p>Välj ett rakt, välbelyst foto av konstverket (helst beskuret till bara verket).
+     Filen skapas lokalt i din webbläsare – inget laddas upp. Spara den som <code>innehall/verk.mind</code>.</p>
+  <p class="note">Format: JPG, PNG eller WebP. Stora bilder förminskas automatiskt till 1500 px.</p>
 
-  <input type="file" id="file" accept="image/*">
+  <input type="file" id="file" accept="image/jpeg,image/png,image/webp">
+  <p id="info"></p>
   <img id="preview" hidden alt="">
   <p><button id="go" disabled>Skapa spårningsfil</button></p>
   <progress id="bar" max="100" value="0" hidden></progress>
@@ -29,27 +33,65 @@
   <script type="module">
     import { Compiler } from "../libs/mindar/mindar-image.prod.js";
     const $ = (id) => document.getElementById(id);
+    const MAX = 1500;
     let image = null;
+
+    function say(el, text, cls = "") { $(el).textContent = text; $(el).className = cls; }
 
     $("file").addEventListener("change", (e) => {
       const f = e.target.files[0]; if (!f) return;
-      const img = $("preview");
-      img.onload = () => { image = img; $("go").disabled = false; };
+      image = null; $("go").disabled = true; say("status", "");
+      say("info", "Läser bilden …");
+      const img = new Image();
+      img.onload = () => {
+        // Förminska stora bilder (snabbare och lika bra spårning)
+        const s = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        const small = new Image();
+        small.onload = () => {
+          image = small;
+          $("preview").src = small.src; $("preview").hidden = false;
+          $("go").disabled = false;
+          const ratio = (img.naturalHeight / img.naturalWidth).toFixed(3);
+          say("info", `Bild inläst: ${img.naturalWidth} × ${img.naturalHeight} px` +
+            (s < 1 ? ` (förminskas till ${c.width} × ${c.height})` : "") +
+            `. Proportioner för config.js → videoAspect: ${ratio}`, "ok");
+        };
+        small.src = c.toDataURL("image/jpeg", 0.92);
+      };
+      img.onerror = () => {
+        $("preview").hidden = true;
+        say("info", `Kunde inte läsa "${f.name}". Spara om bilden som JPG eller PNG (t.ex. i Förhandsvisning/Photoshop: Exportera → JPEG) och försök igen. HEIC-, TIFF- och PSD-filer fungerar inte i webbläsaren.`, "error");
+      };
       img.src = URL.createObjectURL(f);
-      img.hidden = false;
     });
 
     $("go").addEventListener("click", async () => {
-      $("go").disabled = true; $("bar").hidden = false; $("status").textContent = "Analyserar bilden …";
-      const compiler = new Compiler();
-      await compiler.compileImageTargets([image], (p) => { $("bar").value = p; });
-      const data = await compiler.exportData();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([data]));
-      a.download = "verk.mind";
-      a.click();
-      $("status").textContent = "Klart! Filen verk.mind har laddats ner – lägg den i mappen innehall/.";
-      $("go").disabled = false;
+      if (!image) return;
+      $("go").disabled = true; $("file").disabled = true;
+      $("bar").hidden = false; $("bar").value = 0;
+      say("status", "Analyserar bilden … (0 %)");
+      try {
+        const compiler = new Compiler();
+        await compiler.compileImageTargets([image], (p) => {
+          $("bar").value = p;
+          say("status", `Analyserar bilden … (${Math.round(p)} %)`);
+        });
+        const data = await compiler.exportData();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([data]));
+        a.download = "verk.mind";
+        document.body.appendChild(a); a.click(); a.remove();
+        $("bar").value = 100;
+        say("status", "Klart! Filen verk.mind har laddats ner – ladda upp den till mappen qr13/innehall/ på GitHub.", "ok");
+      } catch (err) {
+        console.error(err);
+        say("status", "Något gick fel: " + (err?.message || err) + ". Prova en mindre bild, eller en annan webbläsare (Chrome fungerar bäst).", "error");
+      } finally {
+        $("go").disabled = false; $("file").disabled = false;
+      }
     });
   </script>
 </body>
