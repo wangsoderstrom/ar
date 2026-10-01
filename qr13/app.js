@@ -165,34 +165,50 @@ async function startAR() {
 
   await unlockPlayback();
 
+  // Högre kameraupplösning ger bättre igenkänning av fina linjer.
+  patchCameraResolution();
+
   mindar = new MindARThree({
     container: $("ar"),
     imageTargetSrc: bust(CONFIG.target),
     uiLoading: "no", uiScanning: "no", uiError: "no",
     filterMinCF: CONFIG.filterMinCF,
     filterBeta: CONFIG.filterBeta,
+    warmupTolerance: CONFIG.warmupTolerance ?? 3,
+    missTolerance: CONFIG.missTolerance ?? 30,
   });
   const { renderer, scene, camera } = mindar;
 
-  // Videoplan som ligger på verket. MindAR: 1 enhet = verkets bredd.
+  // Videoplan. Den ligger i en egen "hållare" som följer verket – när spårningen
+  // tappas stannar hållaren kvar på senaste position en stund i stället för att försvinna.
   const mat = makeMaterial();
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, CONFIG.videoAspect), mat.material);
   plane.scale.setScalar(CONFIG.scale);
   plane.position.set(CONFIG.offsetX, CONFIG.offsetY, 0.001);
+  const holder = new THREE.Group();
+  holder.matrixAutoUpdate = false;
+  holder.visible = false;
+  holder.add(plane);
+  scene.add(holder);
 
   const anchor = mindar.addAnchor(0);
-  anchor.group.add(plane);
+  const GRACE = Math.max(0, CONFIG.lostGrace ?? 3) * 1000;
+  let tracking = false;
+  let lostAt = 0;
 
   anchor.onTargetFound = () => {
-    targetVisible = true;
-    show("scan", false);
-    video.muted = muted;
-    playAll().catch(() => { video.muted = true; muted = true; updateSoundButtons(); playAll(); });
+    tracking = true;
+    lostAt = 0;
+    if (!targetVisible) {
+      targetVisible = true;
+      show("scan", false);
+      video.muted = muted;
+      playAll().catch(() => { video.muted = true; muted = true; updateSoundButtons(); playAll(); });
+    }
   };
   anchor.onTargetLost = () => {
-    targetVisible = false;
-    pauseAll();
-    show("scan");
+    tracking = false;
+    lostAt = performance.now();
   };
 
   try {
@@ -212,16 +228,50 @@ async function startAR() {
   show("controls");
   updateSoundButtons();
 
-  // Mjuk in-/uttoning
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
     const dt = clock.getDelta();
+
+    // Följ verket så länge det spåras
+    if (tracking && anchor.group.visible) {
+      holder.matrix.copy(anchor.group.matrix);
+      holder.matrixWorldNeedsUpdate = true;
+      holder.visible = true;
+    }
+
+    // Tappat för länge? Tona ut, pausa och visa sikthjälpen igen.
+    if (!tracking && targetVisible && performance.now() - lostAt > GRACE) {
+      targetVisible = false;
+      pauseAll();
+      show("scan");
+    }
+
+    // Mjuk in-/uttoning
     const goal = targetVisible ? 1 : 0;
     const step = CONFIG.fade > 0 ? dt / CONFIG.fade : 1;
     const o = mat.getOpacity();
-    mat.setOpacity(o + Math.max(-step, Math.min(step, goal - o)));
+    const n = o + Math.max(-step, Math.min(step, goal - o));
+    mat.setOpacity(n);
+    if (n <= 0 && !targetVisible) holder.visible = false;
+
     renderer.render(scene, camera);
   });
+}
+
+// Be om högre kameraupplösning (MindAR frågar annars inte, och många telefoner ger då 640×480)
+let cameraPatched = false;
+function patchCameraResolution() {
+  const w = CONFIG.cameraWidth ?? 1280;
+  if (cameraPatched || !w || !navigator.mediaDevices?.getUserMedia) return;
+  cameraPatched = true;
+  const orig = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  navigator.mediaDevices.getUserMedia = async (c) => {
+    if (c && c.video && typeof c.video === "object") {
+      const hi = { ...c, video: { ...c.video, width: { ideal: w }, height: { ideal: Math.round(w * 9 / 16) } } };
+      try { return await orig(hi); } catch (_) { /* faller tillbaka nedan */ }
+    }
+    return orig(c);
+  };
 }
 
 function stopAR() {

@@ -56,6 +56,12 @@ export const CONFIG = {
   filterMinCF: 0.0001,
   filterBeta: 0.001,
 
+  // Stabilitet – hur lätt filmen "släpper":
+  missTolerance: 30,    // antal missade bildrutor innan verket räknas som tappat (MindAR-standard: 5)
+  warmupTolerance: 3,   // antal bildrutor verket måste synas innan filmen visas (standard: 5)
+  lostGrace: 3,         // sekunder filmen ligger kvar och spelar på senaste position när verket tappats
+  cameraWidth: 1280,    // önskad kamerabredd i pixlar (högre = bättre igenkänning, lite tyngre). 0 = telefonens standard
+
   // Texter
   text: {
     title: "Ett dolt lager",
