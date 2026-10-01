@@ -22,8 +22,8 @@ export const CONFIG = {
 
   // Greenscreen-inställningar (används bara när alphaMode är "chroma")
   chromaKey: {
-    color: "#20789c",   // färgen som ska bort, t.ex. "#00b140" (studiogrön) eller "#0047bb" (blå)
-    similarity: 0.12,    // hur lik färgen måste vara för att tas bort (högre = mer tas bort)
+    color: "#297c9b",   // färgen som ska bort, t.ex. "#00b140" (studiogrön) eller "#0047bb" (blå)
+    similarity: 0.10,    // hur lik färgen måste vara för att tas bort (högre = mer tas bort)
     smoothness: 0.06,   // mjukhet i kanten (högre = mjukare övergång)
     spill: 0.08,         // tar bort grönt skimmer i kanterna (högre = mer)
   },
