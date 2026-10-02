@@ -68,18 +68,20 @@
   .moves{min-width:48px;text-align:center;font-variant-numeric:tabular-nums;color:#5a4f1c;font-size:16px;font-weight:600}
   [hidden]{display:none!important}
 
-  /* Belöning (tillfällig – ersätts med video) */
-  .board.reward .whole{animation:reward 3.2s ease-in-out .4s 2}
-  @keyframes reward{
-    0%,100%{transform:scale(1) rotate(0)}
-    30%{transform:scale(1.04) rotate(-2deg)}
-    60%{transform:scale(.98) rotate(1.5deg)}
-  }
-  .reward-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;z-index:4}
+  /* Belöning: filmen visas över hela skärmen när pusslet är löst */
+  .reward{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(8,20,8,.92);
+    opacity:0;transition:opacity .5s ease;padding:calc(12px + var(--safe-t)) 12px calc(12px + var(--safe-b))}
+  .reward.on{opacity:1}
+  .reward video{max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;border-radius:8px}
+
+  /* "Tryck" när man blandar om */
+  .board.bump{animation:bump .35s cubic-bezier(.3,.7,.3,1)}
+  @keyframes bump{30%{transform:scale(.94)}70%{transform:scale(1.02)}}
+  .board.slow .tile{transition-duration:.12s}
 
   @media (prefers-reduced-motion: reduce){
     .tile{transition-duration:.01s}
-    .board.reward .whole{animation:none}
+    .board.bump{animation:none}
   }
 </style>
 </head>
@@ -107,7 +109,7 @@
 const N = 3;                 // 3×3 – enklare
 const HOLE = 2 * N + 0;      // nedre vänstra (nästan tom mörkgrön) är "hålet"
 const SHUFFLE_MOVES = 5;     // färre = lättare. Alltid lösbart.
-const REWARD_VIDEO = null;   // t.ex. "belöning.mp4" när videon finns
+const REWARD_VIDEO = 'film.mp4';   // t.ex. "belöning.mp4" när videon finns
 
 /* ===== Spel ===== */
 const board = document.getElementById('board');
@@ -178,9 +180,9 @@ function neighbours(p){
   return out;
 }
 
-async function shuffle(instant = false){
+async function shuffle(instant = false, step = 28){
   busy = true;
-  board.classList.add('fast');
+  board.classList.add(step > 60 ? 'slow' : 'fast');
   let prev = -1;
   for (let i = 0; i < SHUFFLE_MOVES || pos.every((p, k) => p === k); i++){
     const h = pos[HOLE];
@@ -188,10 +190,10 @@ async function shuffle(instant = false){
     const q = opts[Math.floor(Math.random() * opts.length)];
     prev = h;
     const t = tileAt(q); pos[t] = h; pos[HOLE] = q;
-    if (!instant){ layout(); await wait(28); }
+    if (!instant){ layout(); await wait(step); }
   }
   if (instant) layout();
-  board.classList.remove('fast');
+  board.classList.remove('fast', 'slow');
   if (!instant) await wait(120);
   moves = 0; movesEl.textContent = 0;
   busy = false;
@@ -200,7 +202,6 @@ async function shuffle(instant = false){
 async function start(instant = false){
   state = 'playing';
   board.classList.remove('show-whole', 'solved', 'reward');
-  board.querySelector('.reward-video')?.remove();
   board.classList.add('playing');
   startBtn.hidden = true; shuffleBtn.hidden = peekBtn.hidden = movesEl.hidden = false;
   if (instant){ await shuffle(true); return; }
@@ -218,16 +219,32 @@ async function win(){
   await wait(320);
   board.classList.add('show-whole'); // bitarna smälter ihop till originalteckningen
   await wait(600);
-  if (REWARD_VIDEO){
-    const v = document.createElement('video');
-    Object.assign(v, { src: REWARD_VIDEO, muted: true, playsInline: true, autoplay: true, className: 'reward-video' });
-    v.setAttribute('playsinline', '');
-    board.appendChild(v);
-  } else {
-    board.classList.add('reward');
-  }
   startBtn.hidden = false;
+  if (REWARD_VIDEO) showFilm();
   startBtn.setAttribute('aria-label', 'Spela igen');
+}
+
+/* Filmen: spelas en gång, tryck för att stänga */
+// Filmen förladdas medan man spelar, så den startar direkt
+let film = null;
+function makeFilm(){
+  film = document.createElement('video');
+  film.src = REWARD_VIDEO; film.muted = true; film.playsInline = true; film.preload = 'auto';
+  film.setAttribute('playsinline', ''); film.setAttribute('muted', '');
+  film.load();
+}
+function showFilm(){
+  const wrap = document.createElement('div');
+  wrap.className = 'reward';
+  if (!film) makeFilm();
+  const v = film; v.currentTime = 0;
+  wrap.appendChild(v);
+  document.body.appendChild(wrap);
+  requestAnimationFrame(() => wrap.classList.add('on'));
+  const close = () => { v.pause(); wrap.classList.remove('on'); setTimeout(() => wrap.remove(), 500); };
+  v.addEventListener('ended', () => setTimeout(close, 600));
+  wrap.addEventListener('click', close);
+  v.play().catch(() => {});
 }
 
 /* Titta: håll inne för att se hela bilden */
@@ -262,7 +279,17 @@ board.addEventListener('pointerup', e => {
 board.addEventListener('pointercancel', () => touch = null);
 board.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('gesturestart', e => e.preventDefault()); // iOS: ingen nypzoom mitt i spelet
-shuffleBtn.addEventListener('click', () => { if (!busy) shuffle(); });
+// Blanda om: börjar alltid från den lösta bilden, så det aldrig blir svårare
+shuffleBtn.addEventListener('click', async () => {
+  if (busy || state !== 'playing') return;
+  busy = true;
+  if (navigator.vibrate) navigator.vibrate(25);
+  board.classList.remove('bump'); void board.offsetWidth; board.classList.add('bump');
+  pos = [...Array(N*N).keys()];   // tillbaka till löst bild …
+  layout();
+  await wait(260);
+  await shuffle(false, 130);      // … och 5 synliga drag
+});
 
 /* Piltangenter (dator) – flyttar biten som ligger bredvid hålet */
 addEventListener('keydown', e => {
@@ -285,6 +312,7 @@ const pre = new Image();
 pre.onload = pre.onerror = async () => {
   await start(true);
   requestAnimationFrame(() => board.classList.remove('loading'));
+  if (REWARD_VIDEO) setTimeout(makeFilm, 800);
 };
 pre.src = 'bild.jpg';
 </script>
