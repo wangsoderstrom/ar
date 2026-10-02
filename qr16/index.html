@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e8d68a">
+<title>Pussel</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="preload" href="bild.jpg" as="image">
+<style>
+  :root{
+    --paper:#f4f1ea; --ink:#2b2a33; --blue:#e8d68a; --deep:#1f86a6;
+    --gap:0px; --n:3;
+    --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+    --safe-l:env(safe-area-inset-left,0px); --safe-r:env(safe-area-inset-right,0px);
+    --vh:100vh;
+    --board:min(calc(100vw - 32px - var(--safe-l) - var(--safe-r)), calc(var(--vh) - 150px - var(--safe-t) - var(--safe-b)), 560px);
+  }
+  @supports (height:100dvh){ :root{ --vh:100dvh } }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--blue);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+  body{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;padding:calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+    overscroll-behavior:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+  img{-webkit-user-drag:none;-webkit-touch-callout:none}
+
+  /* Liggande mobil: knapparna bredvid pusslet */
+  @media (orientation:landscape) and (max-height:600px){
+    :root{ --board:min(calc(var(--vh) - 32px - var(--safe-t) - var(--safe-b)), calc(100vw - 150px - var(--safe-l) - var(--safe-r)), 560px) }
+    body{flex-direction:row;gap:24px}
+    .bar{flex-direction:column;height:auto!important;width:72px}
+  }
+
+  .board{position:relative;width:var(--board);height:var(--board);touch-action:none}
+  .whole{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    border-radius:6px;opacity:0;transition:opacity .6s ease;pointer-events:none;z-index:3}
+  .board.show-whole .whole{opacity:1}
+  .board.loading{opacity:0}
+  .board{transition:opacity .4s ease}
+
+  .tile{position:absolute;left:0;top:0;
+    /* +0.5px så att inga hårfina springor syns mellan bitarna */
+    width:calc((var(--board) - (var(--n) - 1) * var(--gap)) / var(--n) + .5px);
+    height:calc((var(--board) - (var(--n) - 1) * var(--gap)) / var(--n) + .5px);
+    background-image:url(bild.jpg);
+    background-size:calc(var(--n) * 100%) calc(var(--n) * 100%);
+    border-radius:0;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.28);
+    transition:transform .18s cubic-bezier(.3,.7,.3,1),opacity .4s ease;cursor:pointer;will-change:transform}
+  .board.fast .tile{transition-duration:.05s}
+  /* Hålet: den blå biten är osynlig under spelet – bakgrunden syns igenom */
+  .tile.hole{cursor:default}
+  .board.playing .tile.hole{opacity:0;pointer-events:none}
+  .board.solved .tile{box-shadow:none;cursor:default}
+
+  .bar{display:flex;gap:14px;align-items:center;height:56px}
+  button{appearance:none;border:0;background:#fff;color:var(--ink);width:56px;height:56px;border-radius:50%;
+    display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 8px rgba(10,50,70,.22);
+    transition:transform .12s ease}
+  button{touch-action:manipulation}
+  button:active{transform:scale(.92)}
+  button:disabled{opacity:.5}
+  button svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  button.big{width:72px;height:72px;background:#fff;color:var(--deep)}
+  button.big svg{width:32px;height:32px;fill:currentColor;stroke:none}
+  .moves{min-width:48px;text-align:center;font-variant-numeric:tabular-nums;color:#5a4f1c;font-size:16px;font-weight:600}
+  [hidden]{display:none!important}
+
+  /* Belöning (tillfällig – ersätts med video) */
+  .board.reward .whole{animation:reward 3.2s ease-in-out .4s 2}
+  @keyframes reward{
+    0%,100%{transform:scale(1) rotate(0)}
+    30%{transform:scale(1.04) rotate(-2deg)}
+    60%{transform:scale(.98) rotate(1.5deg)}
+  }
+  .reward-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;z-index:4}
+
+  @media (prefers-reduced-motion: reduce){
+    .tile{transition-duration:.01s}
+    .board.reward .whole{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="board loading" id="board" aria-label="Pussel">
+  <img class="whole" id="whole" src="bild.jpg" alt="Bild: en maskrosliknande stjälk som exploderar i färgade linjer och prickar mot mörkgrön bakgrund" draggable="false">
+</div>
+
+<div class="bar">
+  <button id="peek" aria-label="Titta på hela bilden" hidden>
+    <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
+  <button id="start" class="big" aria-label="Spela igen" hidden>
+    <svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+  </button>
+  <span class="moves" id="moves" hidden>0</span>
+  <button id="shuffle" aria-label="Blanda igen" hidden>
+    <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
+  </button>
+</div>
+
+<script>
+/* ===== Inställningar ===== */
+const N = 3;                 // 3×3 – enklare
+const HOLE = 2 * N + 0;      // nedre vänstra (nästan tom mörkgrön) är "hålet"
+const SHUFFLE_MOVES = 5;     // färre = lättare. Alltid lösbart.
+const REWARD_VIDEO = null;   // t.ex. "belöning.mp4" när videon finns
+
+/* ===== Spel ===== */
+const board = document.getElementById('board');
+const whole = document.getElementById('whole');
+const startBtn = document.getElementById('start');
+const shuffleBtn = document.getElementById('shuffle');
+const peekBtn = document.getElementById('peek');
+const movesEl = document.getElementById('moves');
+
+let pos = [];        // pos[tile] = cellindex
+let tiles = [];
+let moves = 0, state = 'intro', busy = false;
+
+function build(){
+  for (let t = 0; t < N*N; t++){
+    const el = document.createElement('div');
+    el.className = 'tile' + (t === HOLE ? ' hole' : '');
+    const r = Math.floor(t / N), c = t % N;
+    el.style.backgroundPosition = `${c/(N-1)*100}% ${r/(N-1)*100}%`;
+    el.dataset.t = t;
+    board.appendChild(el);
+    tiles.push(el);
+    pos[t] = t;
+  }
+  layout();
+}
+
+function layout(){
+  const size = board.clientWidth, gap = state === 'solved' ? 0 : parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+  const step = (size - (N-1)*gap) / N + gap;
+  tiles.forEach((el, t) => {
+    const p = pos[t], r = Math.floor(p / N), c = p % N;
+    el.style.transform = `translate(${c*step}px, ${r*step}px)`;
+  });
+}
+
+const cellOf = p => [Math.floor(p / N), p % N];
+const tileAt = p => pos.indexOf(p);
+
+function slideFrom(p){
+  // Flytta en hel rad/kolumn mot hålet om p ligger i linje med det
+  const h = pos[HOLE];
+  const [hr, hc] = cellOf(h), [r, c] = cellOf(p);
+  if (p === h || (r !== hr && c !== hc)) return 0;
+  const dir = r === hr ? (c > hc ? 1 : -1) : (r > hr ? N : -N);
+  let n = 0;
+  for (let q = h; q !== p; q += dir){
+    const t = tileAt(q + dir);
+    pos[t] = q; pos[HOLE] = q + dir; n++;
+  }
+  return n;
+}
+
+function tap(t){
+  if (state !== 'playing' || busy) return;
+  const n = slideFrom(pos[t]);
+  if (!n) return;
+  moves += n; movesEl.textContent = moves;
+  if (navigator.vibrate) navigator.vibrate(6);
+  layout();
+  if (pos.every((p, i) => p === i)) win();
+}
+
+function neighbours(p){
+  const [r, c] = cellOf(p), out = [];
+  if (r > 0) out.push(p - N); if (r < N-1) out.push(p + N);
+  if (c > 0) out.push(p - 1); if (c < N-1) out.push(p + 1);
+  return out;
+}
+
+async function shuffle(instant = false){
+  busy = true;
+  board.classList.add('fast');
+  let prev = -1;
+  for (let i = 0; i < SHUFFLE_MOVES || pos.every((p, k) => p === k); i++){
+    const h = pos[HOLE];
+    const opts = neighbours(h).filter(q => q !== prev);
+    const q = opts[Math.floor(Math.random() * opts.length)];
+    prev = h;
+    const t = tileAt(q); pos[t] = h; pos[HOLE] = q;
+    if (!instant){ layout(); await wait(28); }
+  }
+  if (instant) layout();
+  board.classList.remove('fast');
+  if (!instant) await wait(120);
+  moves = 0; movesEl.textContent = 0;
+  busy = false;
+}
+
+async function start(instant = false){
+  state = 'playing';
+  board.classList.remove('show-whole', 'solved', 'reward');
+  board.querySelector('.reward-video')?.remove();
+  board.classList.add('playing');
+  startBtn.hidden = true; shuffleBtn.hidden = peekBtn.hidden = movesEl.hidden = false;
+  if (instant){ await shuffle(true); return; }
+  layout();
+  await wait(350);
+  await shuffle();
+}
+
+async function win(){
+  state = 'solved';
+  board.classList.remove('playing');
+  board.classList.add('solved');
+  shuffleBtn.hidden = peekBtn.hidden = true;
+  layout();                         // springorna stängs
+  await wait(320);
+  board.classList.add('show-whole'); // bitarna smälter ihop till originalteckningen
+  await wait(600);
+  if (REWARD_VIDEO){
+    const v = document.createElement('video');
+    Object.assign(v, { src: REWARD_VIDEO, muted: true, playsInline: true, autoplay: true, className: 'reward-video' });
+    v.setAttribute('playsinline', '');
+    board.appendChild(v);
+  } else {
+    board.classList.add('reward');
+  }
+  startBtn.hidden = false;
+  startBtn.setAttribute('aria-label', 'Spela igen');
+}
+
+/* Titta: håll inne för att se hela bilden */
+const peekOn = e => { e.preventDefault(); if (state === 'playing') board.classList.add('show-whole'); };
+const peekOff = () => { if (state === 'playing') board.classList.remove('show-whole'); };
+peekBtn.addEventListener('pointerdown', peekOn);
+['pointerup','pointerleave','pointercancel'].forEach(ev => peekBtn.addEventListener(ev, peekOff));
+
+startBtn.addEventListener('click', () => start());
+
+/* Pekskärm: tryck på en bit, eller svep i den riktning en bit ska glida */
+let touch = null;
+board.addEventListener('pointerdown', e => {
+  if (!e.isPrimary) return;
+  e.preventDefault();
+  const el = e.target.closest('.tile');
+  touch = { x: e.clientX, y: e.clientY, t: el ? +el.dataset.t : -1, id: e.pointerId };
+  try { board.setPointerCapture(e.pointerId); } catch {}
+});
+board.addEventListener('pointerup', e => {
+  if (!touch || e.pointerId !== touch.id) return;
+  const dx = e.clientX - touch.x, dy = e.clientY - touch.y, t = touch.t;
+  touch = null;
+  const swipe = Math.max(Math.abs(dx), Math.abs(dy)) > 22;
+  if (!swipe){ if (t >= 0) tap(t); return; }
+  if (state !== 'playing' || busy) return;
+  // Svep åt höger = biten till vänster om hålet glider in, osv.
+  const [hr, hc] = cellOf(pos[HOLE]);
+  const [r, c] = Math.abs(dx) > Math.abs(dy) ? [hr, hc - Math.sign(dx)] : [hr - Math.sign(dy), hc];
+  if (r >= 0 && r < N && c >= 0 && c < N) tap(tileAt(r*N + c));
+});
+board.addEventListener('pointercancel', () => touch = null);
+board.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault()); // iOS: ingen nypzoom mitt i spelet
+shuffleBtn.addEventListener('click', () => { if (!busy) shuffle(); });
+
+/* Piltangenter (dator) – flyttar biten som ligger bredvid hålet */
+addEventListener('keydown', e => {
+  if (state !== 'playing' || busy) return;
+  const [hr, hc] = cellOf(pos[HOLE]);
+  const m = { ArrowLeft:[hr, hc+1], ArrowRight:[hr, hc-1], ArrowUp:[hr+1, hc], ArrowDown:[hr-1, hc] }[e.key];
+  if (!m || m[0] < 0 || m[0] >= N || m[1] < 0 || m[1] >= N) return;
+  e.preventDefault(); tap(tileAt(m[0]*N + m[1]));
+});
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+addEventListener('resize', layout);
+addEventListener('orientationchange', () => setTimeout(layout, 250));
+window.visualViewport?.addEventListener('resize', layout);
+build();
+
+/* Starta först när bitarna har laddats (långsamt wifi på sjukhuset) */
+const pre = new Image();
+// Börjar direkt med en blandad bild – hela bilden visas inte först
+pre.onload = pre.onerror = async () => {
+  await start(true);
+  requestAnimationFrame(() => board.classList.remove('loading'));
+};
+pre.src = 'bild.jpg';
+</script>
+</body>
+</html>
