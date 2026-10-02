@@ -72,7 +72,10 @@
   .reward{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(8,20,8,.92);
     opacity:0;transition:opacity .5s ease;padding:calc(12px + var(--safe-t)) 12px calc(12px + var(--safe-b))}
   .reward.on{opacity:1}
-  .reward video{max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;border-radius:8px}
+  .reward video{position:absolute;inset:calc(12px + var(--safe-t)) 12px calc(12px + var(--safe-b));
+    width:calc(100% - 24px);height:calc(100% - 24px - var(--safe-t) - var(--safe-b));object-fit:contain;background:transparent}
+  .reward .play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:88px;height:88px;z-index:2}
+  .reward .play svg{width:38px;height:38px;fill:var(--deep, #1f86a6);stroke:none}
 
   /* "Tryck" när man blandar om */
   .board.bump{animation:bump .35s cubic-bezier(.3,.7,.3,1)}
@@ -109,7 +112,7 @@
 const N = 3;                 // 3×3 – enklare
 const HOLE = 2 * N + 0;      // nedre vänstra (nästan tom mörkgrön) är "hålet"
 const SHUFFLE_MOVES = 5;     // färre = lättare. Alltid lösbart.
-const REWARD_VIDEO = 'film.mp4';   // t.ex. "belöning.mp4" när videon finns
+const REWARD_VIDEO = 'film.mp4?v=2';   // ändra v= när filmen byts, så mobiler hämtar den nya   // t.ex. "belöning.mp4" när videon finns
 
 /* ===== Spel ===== */
 const board = document.getElementById('board');
@@ -212,6 +215,7 @@ async function start(instant = false){
 
 async function win(){
   state = 'solved';
+  if (REWARD_VIDEO) primeFilm();
   board.classList.remove('playing');
   board.classList.add('solved');
   shuffleBtn.hidden = peekBtn.hidden = true;
@@ -228,23 +232,45 @@ async function win(){
 // Filmen förladdas medan man spelar, så den startar direkt
 let film = null;
 function makeFilm(){
+  if (film) return;
   film = document.createElement('video');
-  film.src = REWARD_VIDEO; film.muted = true; film.playsInline = true; film.preload = 'auto';
-  film.setAttribute('playsinline', ''); film.setAttribute('muted', '');
+  film.muted = true; film.defaultMuted = true; film.playsInline = true; film.preload = 'auto';
+  film.setAttribute('muted', ''); film.setAttribute('playsinline', ''); film.setAttribute('webkit-playsinline', '');
+  film.poster = 'poster.jpg';
+  film.src = REWARD_VIDEO;
   film.load();
 }
+// iOS: "lås upp" filmen inom samma tryck som löser pusslet
+function primeFilm(){
+  makeFilm();
+  const p = film.play();
+  if (p) p.then(() => { film.pause(); film.currentTime = 0; }).catch(() => {});
+}
 function showFilm(){
+  makeFilm();
+  const v = film;
   const wrap = document.createElement('div');
   wrap.className = 'reward';
-  if (!film) makeFilm();
-  const v = film; v.currentTime = 0;
+  try { v.currentTime = 0; } catch {}
   wrap.appendChild(v);
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('on'));
   const close = () => { v.pause(); wrap.classList.remove('on'); setTimeout(() => wrap.remove(), 500); };
-  v.addEventListener('ended', () => setTimeout(close, 600));
-  wrap.addEventListener('click', close);
-  v.play().catch(() => {});
+  v.onended = () => setTimeout(close, 600);
+  // Om mobilen stoppar autostart (t.ex. iPhone i strömsparläge): visa en play-knapp
+  const showPlay = () => {
+    if (wrap.querySelector('.play')) return;
+    const b = document.createElement('button');
+    b.className = 'play big'; b.setAttribute('aria-label', 'Spela film');
+    b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
+    b.addEventListener('click', e => { e.stopPropagation(); b.remove(); v.play().catch(() => {}); });
+    wrap.appendChild(b);
+  };
+  wrap.addEventListener('click', () => { if (!wrap.querySelector('.play')) close(); });
+  const p = v.play();
+  if (p) p.catch(showPlay);
+  // Säkerhetsnät: har filmen inte kommit igång efter 2,5 s
+  setTimeout(() => { if (wrap.isConnected && (v.paused || v.currentTime === 0)) showPlay(); }, 2500);
 }
 
 /* Titta: håll inne för att se hela bilden */
