@@ -39,7 +39,7 @@ export const CONFIG = {
 
   // Storlek och placering relativt verket. 1 = exakt verkets bredd.
   // offsetX/offsetY i verkets bredder (0.1 = 10 % av bredden). Y uppåt.
-  scale: 1.0,
+  scale: 4.0,
   offsetX: 0,
   offsetY: 0,
 
