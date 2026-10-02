@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111">
+  <link rel="icon" href="data:,">
+  <title>Ett dolt lager</title>
+  <script>
+    // Hämta alltid senaste versionen av stil och kod (GitHub Pages cachar annars i 10 min)
+    window.__v = Date.now();
+    document.write('<link rel="stylesheet" href="style.css?v=' + window.__v + '">');
+  </script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./libs/three/three.module.js",
+      "three/addons/": "./libs/three/addons/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- AR-vy (kamera + 3D) -->
+  <div id="ar"></div>
+
+  <!-- Startskärm -->
+  <section id="start" class="screen">
+    <div class="card">
+      <h1 data-t="title">Ett dolt lager</h1>
+      <p data-t="intro">Rikta telefonens kamera mot konstverket för att se det som finns under ytan.</p>
+      <button id="btn-start" class="primary" data-t="start">Starta</button>
+      <button id="btn-nocam" class="ghost" data-t="noCamera">Visa utan kamera</button>
+      <p class="small" data-t="privacy">Kameran används bara i din telefon. Ingen bild sparas eller skickas.</p>
+      <p id="error" class="error" hidden></p>
+    </div>
+  </section>
+
+  <!-- Laddar -->
+  <section id="loading" class="screen" hidden>
+    <div class="spinner" aria-hidden="true"></div>
+    <p data-t="loading">Laddar …</p>
+  </section>
+
+  <!-- Sökhjälp medan kameran letar efter verket -->
+  <div id="scan" hidden>
+    <div class="frame" aria-hidden="true"><img id="guide" alt="" hidden><i></i><i></i><i></i><i></i></div>
+    <p data-t="scan">Rikta kameran mot verket</p>
+  </div>
+
+  <!-- Kontroller under AR -->
+  <div id="controls" hidden>
+    <button id="btn-sound" class="pill"></button>
+  </div>
+
+  <!-- Reservläge: bara videon, ingen kamera -->
+  <section id="fallback" class="screen" hidden>
+    <video id="fallback-video" controls playsinline preload="metadata"></video>
+    <canvas id="fallback-canvas" hidden></canvas>
+    <button id="btn-fb-sound" class="pill" hidden></button>
+    <button id="btn-close" class="ghost" data-t="close">Stäng</button>
+  </section>
+
+  <!-- Videokälla för AR (dold, används som textur) -->
+  <video id="ar-video" playsinline webkit-playsinline muted preload="auto" crossorigin="anonymous" hidden></video>
+
+  <script type="module">
+    import("./app.js?v=" + window.__v).catch((e) => {
+      console.error(e);
+      const el = document.getElementById("error");
+      el.textContent = "Tekniskt fel: " + e.message + " – kontrollera config.js (punkt i decimaltal, citattecken runt text, komma efter varje rad).";
+      el.hidden = false;
+      document.getElementById("btn-start").disabled = true;
+    });
+  </script>
+</body>
+</html>
