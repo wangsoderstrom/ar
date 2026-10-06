@@ -53,9 +53,10 @@ button { font:inherit; cursor:pointer; border-radius:999px; -webkit-tap-highligh
 
 /* Startside med baggrundsbillede: lys baggrund, mørk tekst, indhold øverst */
 #start.has-bg { color:#1a1a1a; justify-content:flex-start;
-  padding-top: max(7vh, env(safe-area-inset-top));
+  padding-top: max(16px, env(safe-area-inset-top));
   background-repeat:no-repeat; background-position: center bottom;
   background-size: min(100%, 560px) auto; }
+#start.has-bg .card { margin-block:auto; transform: translateY(var(--text-offset, 0)); }
 #start.has-bg h1 { font-size:1.6rem; margin-bottom:.4em; }
 #start.has-bg p { margin-bottom:.9em; }
 #start.has-bg .primary { background:#1a1a1a; color:#fff; padding:.85em; }
@@ -63,7 +64,7 @@ button { font:inherit; cursor:pointer; border-radius:999px; -webkit-tap-highligh
 #start.has-bg .small { color:#333; margin-top:.9em; font-size:.8rem; }
 #start.has-bg .error { color:#8a1c12; }
 @media (max-height: 740px) {
-  #start.has-bg { padding-top: max(3vh, env(safe-area-inset-top)); background-size: min(80%, 560px) auto; }
+  #start.has-bg { background-size: min(80%, 560px) auto; }
   #start.has-bg h1 { font-size:1.35rem; }
   #start.has-bg p { font-size:.92rem; margin-bottom:.6em; }
   #start.has-bg .primary { padding:.7em; }
