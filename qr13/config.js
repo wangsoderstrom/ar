@@ -35,6 +35,7 @@ export const CONFIG = {
   // Bakgrundsbild på startsidan ("" = ingen) och färgen runt den
   startBackground: "innehall/bakgrund.png",
   startBackgroundColor: "#b3b3b3",
+  startTextOffset: 0,   // flytta texten: negativt = uppåt, positivt = nedåt (i % av skärmhöjden, t.ex. -3)
 
   // Sikthjälp: en blek version av verket visas medan kameran letar,
   // så att man ser vad man ska sikta på. Tom sträng "" = bara hörnmarkeringar.

@@ -22,6 +22,22 @@ if (CONFIG.startBackground) {
     document.body.style.backgroundColor = CONFIG.startBackgroundColor;
   }
   st.classList.add("has-bg");
+
+  // Centrera texten i den lediga ytan ovanför bilden (räknas om för varje skärm)
+  const img = new Image();
+  img.onload = () => {
+    const ratio = img.naturalHeight / img.naturalWidth;
+    const layout = () => {
+      const share = innerHeight <= 740 ? 0.8 : 1;          // samma som i style.css
+      const w = Math.min(innerWidth * share, 560);
+      const h = w * ratio;
+      st.style.paddingBottom = Math.round(h * 0.95) + "px";  // lite överlapp mot bildens överkant
+      st.style.setProperty("--text-offset", (CONFIG.startTextOffset || 0) + "vh");
+    };
+    layout();
+    addEventListener("resize", layout);
+  };
+  img.src = bust(CONFIG.startBackground);
 }
 
 // Sikthjälp (blek bild av verket i sökramen)
