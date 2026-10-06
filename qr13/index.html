@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="sv">
+<html lang="da">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111">
   <link rel="icon" href="data:,">
-  <title>Ett dolt lager</title>
+  <title>Et skjult lag</title>
   <script>
     // Hämta alltid senaste versionen av stil och kod (GitHub Pages cachar annars i 10 min)
     window.__v = Date.now();
@@ -27,11 +27,11 @@
   <!-- Startskärm -->
   <section id="start" class="screen">
     <div class="card">
-      <h1 data-t="title">Ett dolt lager</h1>
-      <p data-t="intro">Rikta telefonens kamera mot konstverket för att se det som finns under ytan.</p>
-      <button id="btn-start" class="primary" data-t="start">Starta</button>
-      <button id="btn-nocam" class="ghost" data-t="noCamera">Visa utan kamera</button>
-      <p class="small" data-t="privacy">Kameran används bara i din telefon. Ingen bild sparas eller skickas.</p>
+      <h1 data-t="title">Et skjult lag</h1>
+      <p data-t="intro">Ret telefonens kamera mod kunstværket for at se det, der gemmer sig under overfladen.</p>
+      <button id="btn-start" class="primary" data-t="start">Start</button>
+      <button id="btn-nocam" class="ghost" data-t="noCamera">Se uden kamera</button>
+      <p class="small" data-t="privacy">Kameraet bruges kun på din telefon. Der gemmes eller sendes ingen billeder.</p>
       <p id="error" class="error" hidden></p>
     </div>
   </section>
@@ -39,13 +39,13 @@
   <!-- Laddar -->
   <section id="loading" class="screen" hidden>
     <div class="spinner" aria-hidden="true"></div>
-    <p data-t="loading">Laddar …</p>
+    <p data-t="loading">Indlæser …</p>
   </section>
 
   <!-- Sökhjälp medan kameran letar efter verket -->
   <div id="scan" hidden>
     <div class="frame" aria-hidden="true"><img id="guide" alt="" hidden><i></i><i></i><i></i><i></i></div>
-    <p data-t="scan">Rikta kameran mot verket</p>
+    <p data-t="scan">Ret kameraet mod værket</p>
   </div>
 
   <!-- Kontroller under AR -->
@@ -58,7 +58,7 @@
     <video id="fallback-video" controls playsinline preload="metadata"></video>
     <canvas id="fallback-canvas" hidden></canvas>
     <button id="btn-fb-sound" class="pill" hidden></button>
-    <button id="btn-close" class="ghost" data-t="close">Stäng</button>
+    <button id="btn-close" class="ghost" data-t="close">Luk</button>
   </section>
 
   <!-- Videokälla för AR (dold, används som textur) -->
@@ -68,7 +68,7 @@
     import("./app.js?v=" + window.__v).catch((e) => {
       console.error(e);
       const el = document.getElementById("error");
-      el.textContent = "Tekniskt fel: " + e.message + " – kontrollera config.js (punkt i decimaltal, citattecken runt text, komma efter varje rad).";
+      el.textContent = "Teknisk fejl: " + e.message + " (kontrollér config.js)";
       el.hidden = false;
       document.getElementById("btn-start").disabled = true;
     });

@@ -32,6 +32,10 @@ export const CONFIG = {
   // I läget "packed": ange proportionerna för EN halva (inte hela filen).
   videoAspect: 0.833,
 
+  // Bakgrundsbild på startsidan ("" = ingen) och färgen runt den
+  startBackground: "innehall/bakgrund.png",
+  startBackgroundColor: "#b3b3b3",
+
   // Sikthjälp: en blek version av verket visas medan kameran letar,
   // så att man ser vad man ska sikta på. Tom sträng "" = bara hörnmarkeringar.
   guideImage: "innehall/verk.jpg",
@@ -62,18 +66,18 @@ export const CONFIG = {
   lostGrace: 3,         // sekunder filmen ligger kvar och spelar på senaste position när verket tappats
   cameraWidth: 1280,    // önskad kamerabredd i pixlar (högre = bättre igenkänning, lite tyngre). 0 = telefonens standard
 
-  // Texter
+  // Tekster (dansk)
   text: {
-    title: "Ett dolt lager",
-    intro: "Rikta telefonens kamera mot konstverket för att se det som finns under ytan.",
-    start: "Starta",
-    noCamera: "Visa utan kamera",
-    privacy: "Kameran används bara i din telefon. Ingen bild sparas eller skickas.",
-    loading: "Laddar …",
-    scan: "Rikta kameran mot verket",
-    soundOn: "Ljud på",
-    soundOff: "Ljud av",
-    close: "Stäng",
-    cameraError: "Kameran kunde inte startas. Du kan titta på verket utan kamera i stället.",
+    title: "Et skjult lag",
+    intro: "Ret telefonens kamera mod kunstværket for at se det, der gemmer sig under overfladen.",
+    start: "Start",
+    noCamera: "Se uden kamera",
+    privacy: "Kameraet bruges kun på din telefon. Der gemmes eller sendes ingen billeder.",
+    loading: "Indlæser …",
+    scan: "Ret kameraet mod værket",
+    soundOn: "Lyd til",
+    soundOff: "Lyd fra",
+    close: "Luk",
+    cameraError: "Kameraet kunne ikke startes. Du kan se værket uden kamera i stedet.",
   },
 };

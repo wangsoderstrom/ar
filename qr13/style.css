@@ -50,3 +50,23 @@ button { font:inherit; cursor:pointer; border-radius:999px; -webkit-tap-highligh
 .frame.has-guide i { border-color: rgba(255,255,255,.95); }
 @keyframes breathe { 50% { opacity: calc(var(--guide-opacity, .35) * .6); } }
 @media (prefers-reduced-motion: reduce) { .frame, .spinner, #guide { animation:none; } }
+
+/* Startside med baggrundsbillede: lys baggrund, mørk tekst, indhold øverst */
+#start.has-bg { color:#1a1a1a; justify-content:flex-start;
+  padding-top: max(7vh, env(safe-area-inset-top));
+  background-repeat:no-repeat; background-position: center bottom;
+  background-size: min(100%, 560px) auto; }
+#start.has-bg h1 { font-size:1.6rem; margin-bottom:.4em; }
+#start.has-bg p { margin-bottom:.9em; }
+#start.has-bg .primary { background:#1a1a1a; color:#fff; padding:.85em; }
+#start.has-bg .ghost { border-color:rgba(0,0,0,.35); color:#1a1a1a; padding:.7em; }
+#start.has-bg .small { color:#333; margin-top:.9em; font-size:.8rem; }
+#start.has-bg .error { color:#8a1c12; }
+@media (max-height: 740px) {
+  #start.has-bg { padding-top: max(3vh, env(safe-area-inset-top)); background-size: min(80%, 560px) auto; }
+  #start.has-bg h1 { font-size:1.35rem; }
+  #start.has-bg p { font-size:.92rem; margin-bottom:.6em; }
+  #start.has-bg .primary { padding:.7em; }
+  #start.has-bg .ghost { padding:.55em; margin-top:.5em; }
+  #start.has-bg .small { margin-top:.6em; font-size:.75rem; }
+}
