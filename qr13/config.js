@@ -69,7 +69,7 @@ export const CONFIG = {
   // Tekster (dansk)
   text: {
     title: "Et skjult lag",
-    intro: "Ret telefonens kamera mod kunstværket for at se det, der gemmer sig under overfladen.",
+    intro: "Ret telefonens kamera mod motivet for at se, hvad der gemmer sig.",
     start: "Start",
     noCamera: "Se uden kamera",
     privacy: "Kameraet bruges kun på din telefon. Der gemmes eller sendes ingen billeder.",
