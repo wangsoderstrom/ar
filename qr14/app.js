@@ -13,6 +13,17 @@ const ALPHA = CONFIG.alphaMode || "none"; // "none" | "packed" | "separate" | "c
 document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = T[el.dataset.t] ?? ""; });
 document.title = T.title;
 
+// Baggrundsbillede på startsiden
+if (CONFIG.startBackground) {
+  const st = $("start");
+  st.style.backgroundImage = `url("${bust(CONFIG.startBackground)}")`;
+  if (CONFIG.startBackgroundColor) {
+    st.style.backgroundColor = CONFIG.startBackgroundColor;
+    document.body.style.backgroundColor = CONFIG.startBackgroundColor;
+  }
+  st.classList.add("has-bg");
+}
+
 // Sikthjälp (blek bild av verket i sökramen)
 if (CONFIG.guideImage) {
   const g = $("guide");
